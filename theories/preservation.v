@@ -75,3 +75,25 @@ apply: ih => //.
 Qed.
 
 (* TODO likwise for small steps *)
+
+
+Theorem step_preservation Gamma s A :
+[ Gamma |- ] -> [ Gamma |- s :- A ] ->
+forall t, step s t -> [ Gamma |- t :- A ].
+Proof.
+  intros.
+  apply step_pstep in H1.
+  apply (subject_reduction H H0 H1).
+Qed.
+
+
+Theorem steps_preservation Gamma s A :
+[ Gamma |- ] -> [ Gamma |- s :- A ] ->
+forall t, star step s t -> [ Gamma |- t :- A ].
+Proof.
+  intros.
+  induction H1.
+  auto.
+  apply (step_preservation H IHstar H2).
+Qed.
+

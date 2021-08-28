@@ -45,9 +45,3 @@ case: H1.
 + move=> [] => s' st. right...
 Qed.
 
-
-
-Theorem type_soundnes : forall s t s',
-[ [::] |- s :- t ] ->
-star step s s' -> not (Stuck s').
-Admitted.

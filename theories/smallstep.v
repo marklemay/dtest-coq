@@ -37,7 +37,7 @@ Inductive step : term -> term -> Prop :=
 
 
 (* TODO this can be parameterized to any definition od step and value *)
-Definition Stuck e := not (value e) /\ not (exists e', step e e').
+Definition Stuck e := (not (value e)) /\ not (exists e', step e e').
 
 (* TODO values don't step *)
 (* TODO step is deterministic *)

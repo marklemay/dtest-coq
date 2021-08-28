@@ -16,6 +16,7 @@ typing_bi.v
 typingCast.v
 progress.v
 preservation.v
+typesoundness.v
 typesoundnessCast.v
 
 elab.v
