@@ -1,0 +1,6 @@
+# action.yml
+name: 'dTest Coq Proofs'
+description: 'A series of Coq proofs for dTest'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
