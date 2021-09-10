@@ -14,5 +14,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Initialize submodules
+      run: git submodule init
+    - name: Update submodules
+      run: git submodule update
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag dtest-proofs:$(date +%s)
