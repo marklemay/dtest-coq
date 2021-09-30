@@ -113,3 +113,42 @@ Proof.
   apply infer_ty in H.
   exact: (type_soundness H).
 Qed.
+
+
+
+Fixpoint erase (e : term) : term :=
+  match e with
+  | Var x    => Var x
+  | TT       => TT
+  | App f a  => App (erase f) (erase a)
+  | Fun b    => Fun (erase b)
+  | Pi a b   => Pi (erase a) (erase b)
+  | Cast e t => erase e
+  end.
+
+  (* /\ erase N = erase N'  *)
+
+Theorem bi_is_conserv : forall ctx n N,
+[ ctx |- n :- N ] -> exists n' N' , erase n = erase n' /\ erase N = erase N' /\ [ ctx |- n' :-> N' ].
+Proof.
+  intros.
+  induction H.
+  exists (Var x).
+  (* exists whatever is in teh ctx *) admit.
+  (* split.
+  eauto.
+  exact (ty_infer_Var H). *)
+  exists TT.
+  exists TT.
+  split.
+  eauto.
+  split.
+  eauto.
+  apply ty_infer_TT.
+  (* from induction Hyps *) admit.
+  (* from induction Hyps, add a cast *) admit.
+  (* from induction Hyps, add a cast *) admit.
+  (* from induction Hyp *) admit.
+  (* use conv*) admit.
+Admitted.
+
