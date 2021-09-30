@@ -37,7 +37,7 @@ Inductive has_type : list term -> term -> term -> Prop :=
   [ Gamma |- Pi A B :- TT ] ->
   [ (Pi A B).[ren (+1)] :: A :: Gamma |- s :- B.[ren (+1)] ] -> 
   (* why +1 ? what is the orientation of gamma and the bound 
-   * vars inside of it. seems more reasonable to do A+1 *)
+   * vars inside of it? seems more reasonable to do A+1 *)
   [ Gamma |- Fun s :- Pi A B ]
 | ty_app Gamma A B s t :
   [ Gamma |- s :- Pi A B ] ->
