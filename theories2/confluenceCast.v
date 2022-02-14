@@ -13,13 +13,21 @@ Unset Printing Implicit Defensive.
 Require Import astCast.
 Require Import smallstepCast.
 
+(* for now, just assume thsi works *)
+
+
+
+
+
+
+
 (* parallel reduction *)
 (* using equalities to constrain substitution 
  * plays better with eauto tactic *)
 (* is it possible to leave the direct substitution then 
  * prove the implication and add them as hints? or would 
  * that make things less clear? *)
-Inductive pstep : term -> term -> Prop :=
+(* Inductive pstep : term -> term -> Prop :=
 | pstep_beta bod bod' a a' u:
   u = bod'.[Fun bod', a' /] ->
   pstep bod bod' ->
@@ -438,4 +446,4 @@ Add Relation term (conv pstep)
   reflexivity proved by conv_refl
   symmetry proved by conv_sym
   transitivity proved by conv_trans
-  as conv_setoid.
+  as conv_setoid. *)

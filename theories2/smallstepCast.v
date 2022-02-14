@@ -14,12 +14,13 @@ Require Import astCast.
 
 (* one step reduction *)
 
-Inductive tysyntax : term -> Prop :=
+(* Inductive tysyntax : term -> Prop :=
 | tysyntax_tt : tysyntax TT
-| tysyntax_Pi : forall A B, tysyntax (Pi A B).
+| tysyntax_Pi : forall A B, tysyntax (Pi A B). *)
 
 Inductive blame : path -> term -> Prop :=
-| blame1 o f A B : blame o (Cast f (Pi A B) TT o)
+.
+(* | blame1 o f A B : blame o (Cast f (Pi A B) TT o)
 | blame2 o f A B : blame o (Cast f TT (Pi A B) o)
 (* structual *)
 | blameCast1 o o' a A B : blame o a -> blame o (Cast a A B o')
@@ -27,29 +28,39 @@ Inductive blame : path -> term -> Prop :=
 | blameCast3 o o' a A B : blame o B -> blame o (Cast a A B o')
 
 | blameappf o f a : blame o f -> blame o (App f a)
-| blameappa o f a : blame o a -> blame o (App f a).
+| blameappa o f a : blame o a -> blame o (App f a). *)
 
 Inductive value : term -> Prop :=
 | value_tt : value TT
 | value_pi : forall A B, value (Pi A B)
-| value_fun : forall b, value (Fun b)
-| value_c : forall e t u o, 
+| value_fun : forall b, value (Fun b).
+(* | value_c : forall e t u o, 
   not (tysyntax e) -> 
   value e -> 
   value t -> 
   value u -> 
-  value (Cast e u t o).
+  value (Cast e u t o). *)
+
+
+
 
 Inductive step : term -> term -> Prop :=
 (* beta reductions *)
 | step_beta b a :
     value a ->
     step (App (Fun b ) a) (b.[Fun b,  a /])
+| step_cast_collapse a l l' :
+  value a ->
+  step
+    (Cast (Cast a l) l')
+    _
 
+
+(* 
 | step_cast_beta f a A B A' B' o :
   value f -> value a -> (* for deterministic evaluation order *)
   step 
-    (App (Cast f (Pi A B) (Pi A' B') o) a)
+    (App (Cast f l) a)
     (let a' := Cast a A' A (Aty o) in
     Cast (App f a') (B.[a' /]) (B'.[ a/]) (BodTy a o))
 
@@ -81,8 +92,8 @@ Inductive step : term -> term -> Prop :=
 | step_appR f a a':
     value f ->
     step a a' -> 
-    step (App f a) (App f a').
-
+    step (App f a) (App f a'). *)
+.
 (* TODO values don't step *)
 (* TODO step is deterministic *)
 
