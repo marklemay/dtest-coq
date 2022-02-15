@@ -16,6 +16,12 @@ Axiom extract_ty : term -> term.
 
 Axiom Union : term -> term ->  term.
 
+(* what if we union 2 terms that have different type interpertations
+\ x . x : Nat -> Nat
+\ x . x : Bool -> Bool
+?
+*)
+
 Inductive step : term -> term -> Prop :=
   (* beta reductions - app *)
   (* | step_beta b a :

@@ -66,7 +66,7 @@ Inductive has_enpoint : list term -> term -> term -> term -> Prop :=
 
   has_enpoint ctx L A' TT ->
   has_enpoint ctx L B' TT ->
-  LumpOk ctx L ->
+  ok ctx L ->
 
   has_enpoint ctx (Cast a L) (Cast a' L) B'
 
@@ -74,7 +74,7 @@ Inductive has_enpoint : list term -> term -> term -> term -> Prop :=
   Connected ctx l ->
   (* In l a -> *)
   has_enpoint ctx a a' A' ->
-  LumpOk ctx L ->
+  ok ctx L ->
   has_enpoint ctx L A' TT -> (* redundnent? *)
   has_enpoint ctx L B' TT ->
   has_enpoint ctx (Lump l L) (Cast a' L) B'
@@ -86,7 +86,7 @@ Inductive has_enpoint : list term -> term -> term -> term -> Prop :=
   has_enpoint ctx t A' TT ->
   has_enpoint ctx t B' TT ->
   has_enpoint ctx t C TT ->
-  LumpOk ctx t ->
+  ok ctx t ->
 
   has_enpoint ctx (assertEq a b t p) (Cast a' L) C 
   (* needs cast to allow local reduction behavior *)
@@ -98,7 +98,7 @@ Inductive has_enpoint : list term -> term -> term -> term -> Prop :=
   has_enpoint ctx t A' TT ->
   has_enpoint ctx t B' TT ->
   has_enpoint ctx t C TT ->
-  LumpOk ctx t ->
+  ok ctx t ->
 
   has_enpoint ctx (assertEq a b t p) (Cast b' L) C 
 
@@ -137,9 +137,49 @@ with Connected : (list term) -> (list term) -> Prop :=
   has_enpoint ctx a a' A' ->
   has_enpoint ctx b b' B' ->
   Connected ctx (cons b rest)
-with LumpOk : (list term) -> (term) -> Prop :=
 
+(*  can you extract the type linkages from the terms *)
+(*  possibly build this property directly into the has endpoint *)
+with ok : (list term) -> (term) -> Prop :=
+| VarOk ctx x : ok ctx (Var x) 
+(* with condition x in ctx*)
+| TTOk ctx : ok ctx TT
+| AppOk ctx f a : ok ctx (App f a)
+(*  TODO may need to make surte at least something matches up *)
+(* | App ctx f f' A' B' a a' A' : 
+has_enpoint ctx a a' A -> *)
 
+(* | FunOk b : ok ctx b *)
+(* expand ctx *)
+
+(* | PiOk b : ... *)
+
+| CastOk ctx a l :
+    ok ctx a ->
+    ok ctx l ->
+    ok ctx (Cast a l)
+
+| LumpOk ctx l L :
+  ok ctx L ->
+  (* (a -> In a l -> LumpOk ctx a) ->
+  (a -> In a l -> Exists a' A' . has_enpoint ctx a a' A' -> has_enpoint ctx L A' TT ) *)
+  Connected ctx l ->
+  ok ctx (Lump l L)
+
+| assertEqOk ctx a a' A' b b' B' t  (p : path) :
+  has_enpoint ctx a a' A' ->
+  has_enpoint ctx b b' B' ->
+
+  has_enpoint ctx t A' TT ->
+  has_enpoint ctx t B' TT->
+  ok ctx t ->
+  
+  ok ctx (assertEq a b t p)
+   
+(* 
+| Arg (l : term)
+| Bod (a :term) (l : term) 
+*) 
 .
 
 Definition ty (ctx : list term) (a : term) (A : term) := 
