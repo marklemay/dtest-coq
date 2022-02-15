@@ -10,7 +10,7 @@ Unset Printing Implicit Defensive.
 
 Inductive path : Type  := (* mutually inductive? *)
 | Here
-| AObs : path -> path
+| AObs : term -> path -> path
 | BodTyObs : term -> path -> path
 | ArgObs : term -> path -> path
 
@@ -40,7 +40,6 @@ Reserved Notation "[ Gamma |- s ~= a :- A ]".
 
 Axiom LumpOk : (list term) -> (term) -> Prop.
 
-Axiom Connected : (list term) -> (list term) -> Prop. 
 (* TODO: merge with above *)
 
 
@@ -110,129 +109,76 @@ Inductive has_enpoint : list term -> term -> term -> term -> Prop :=
   has_enpoint ctx a a' A ->
   has_enpoint ctx a a' B
 
-| tm_conv ctx A B a a' b:
+| tm_conv ctx A a a' b:
   Eq ctx a' b A ->
   has_enpoint ctx a a' A ->
-  has_enpoint ctx a a B
+  has_enpoint ctx a b A
 
 
 (* where "[ Gamma |- s ~= a :- A ]" := (has_enpoint Gamma s a A). *)
+with Connected : (list term) -> (list term) -> Prop :=
+| Sing ctx a : Connected ctx (cons a nil)
+
+| consCon ctx rest a a' A' b b' B'  : 
+  Connected ctx rest ->
+  (* In a rest -> *)
+  has_enpoint ctx a a' A' ->
+  has_enpoint ctx b b' B' ->
+  Connected ctx (cons b rest)
+
 .
 
+Definition ty (ctx : list term) (a : term) (A : term) := 
+  has_enpoint ctx a a A.
 
-(* TODO reorder constructors to mach paper *)
-Inductive has_enpoint : list term -> term -> term -> Prop :=
+Axiom extract_ty : term -> term.
 
+Axiom Union : term -> term ->  term.
 
-
-
-
-
-
-
-Scheme path_mutual := Induction for path Sort Type
-with term_mutual := Induction for term Sort Type.
-
-Definition ids_term (v : var) : term := Var v.
-
-Instance Ids_term : Ids term. 
-  unfold Ids.
-  apply ids_term.
-Defined.
-
-Axiom rename_term : (var -> var) -> (term) -> term.
-(* Fixpoint rename_term (re : var -> var) (t : term) : term :=
-  match t with
-  | Var x => Var (re x)
-  | TT => TT
-  | App s t => App (rename_term re s) (rename_term re t)
-  | Fun s => Fun (rename_term (iterate upren 2 re) s)
-  | Pi s t => Pi (rename_term re s) (rename_term (upren re) t)
-  | Cast s under over p => 
-    let s := rename_term re s in
-    let under := rename_term re under in
-    let over := rename_term re over in
-    let p := rename_path re p in
-    Cast s under over p
-  end
-
-with rename_path (re : var -> var) (p : path) : path :=
-  match p with
-  | Here => Here
-  | Aty p => Aty (rename_path re p)
-  | BodTy t p =>
-    let t := rename_term re t in
-    let p := rename_path re p in
-    BodTy t p
-  end. *)
-
-Instance Rename_term : Rename term. 
-  unfold Rename.
-  apply rename_term.
-Defined.
-
-Axiom subst_term : (var -> term) -> (term) -> term.
-(* Fixpoint subst_term (sigma : var -> term) (s : term) : term :=
-  match s as t return (annot term t) with
-  | Var x => sigma x
-  | TT => TT
-  | App s1 s2 => App (subst_term sigma s1) (subst_term sigma s2)
-  | Fun s0 => Fun (subst_term (upn 2 sigma) s0)
-  | Pi s0 t => Pi (subst_term sigma s0) (subst_term (up sigma) t)
-  | Cast s1 s2 s3 p =>
-    let s1 := subst_term sigma s1 in
-    let s2 := subst_term sigma s2 in
-    let s3 := subst_term sigma s3 in
-    let p := subst_path sigma p in
-    Cast s1 s2 s3 p
-  end
-
-with subst_path (sigma : var -> term) (p : path) : path :=
-  match p as t return (annot path p) with
-  | Here => Here
-  | Aty p => Aty (subst_path sigma p)
-  | BodTy t p => 
-    let t := subst_term sigma t in
-    let p := subst_path sigma p in
-    BodTy t p
-  end. *)
-
-Instance Subst_term : Subst term. 
-  unfold Subst.
-  apply subst_term.
-Defined.
-
-Axiom rename_subst : forall xi s, 
-  rename xi s = s.[ren xi].
-
-Axiom subst_id : forall s, s.[ids] = s.
-
-Axiom ren_subst_comp : forall xi sigma s, 
-  (rename xi s).[sigma] = s.[xi >>> sigma].
+Inductive step : term -> term -> Prop :=
+  (* beta reductions *)
+  (* | step_beta b a :
+      value a ->
+      step (App (Fun b) a) (b.[Fun b,  a /]) *)
   
-Axiom subst_ren_comp : forall sigma xi s,
-  rename xi s.[sigma] = s.[sigma >>> rename xi].
+  | step_cast_beta b a l :
+  (* value a -> *)
+  step
+    (App (Cast b l) a)
+    (Cast (App b (Cast a (Arg l))) (Bod a l))
 
-Axiom subst_comp : forall (sigma tau : var -> term) (s : term),
-  s.[sigma].[tau] = s.[sigma >> tau].
+  | step_Lump_beta a ls L :
+  (* value a -> *)
+  step
+    (App (Lump ls L) a)
+    (Lump (map (fun x => App x a) ls) (Bod a L))
+
+  | step_assert_beta b c p a :
+  (* value a -> *)
+  step
+    (App (assertEq b c p) a)
+    (assertEq (App b a) (App c a) (AObs a p)) 
+(* 
+  | step_cast_collapse a l l' :
+    (* value a -> *)
+    step
+      (Cast (Cast a l) l')
+      (Cast a (Union l l'))
+
+  | step_Lump l l' L L' :
+  (* value a L -> *)
+  step
+    (Lump (cons (Lump l L) l') L')
+    (Lump (l ++ l') (Union L L' ))
+
+  | step_Lump l l' L L' :
+  (* value a L -> *)
+  step
+    (Lump (cons (Lump l L) l') L')
+    (Lump (l ++ l') (Union L L' )) *)
+
+.
+
+Axiom Eq : (list term) -> term -> term -> term -> Prop.
 
 
-(* Instance substLemmas_term : SubstLemmas term.
-  constructor.
-  - apply rename_subst.
-  - apply subst_id.
-  - reflexivity.
-  - apply subst_comp.
-Qed. *)
-
-(* Notation "p .[/ sigma ]" := (subst_path sigma p)
-  (at level 2, sigma at level 200, left associativity,
-    format "p .[/ sigma ]") : subst_scope. *)
-
-
-(* helper tactic *)
-(* Ltac fold_all :=
-  fold subst_term;
-  fold subst_path;
-  fold Subst_term;
-  fold subst. *)
