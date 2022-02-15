@@ -18,7 +18,6 @@ Notation "Gamma `_ i" := (dget Gamma i) (at level 2).
 
 Reserved Notation "[ Gamma |- s |= a :- A ]".
 
-(* TODO reorder constructors to mach paper *)
 Inductive has_enpoint : list term -> term -> term -> Prop :=
 | ty_tt Gamma :
   [ Gamma |- TT :- TT ]
