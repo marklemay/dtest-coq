@@ -24,8 +24,7 @@ with term : Type :=
 | Pi (s : term) (t : {bind term})
 | Cast (s : term) (l : term)
 
-| Lump (terms : list term) (t : term)
-(* TODO: cast just a singleton lump? *)
+| Lump (terms : list term) (t : term) (* TODO: cast just a singleton lump? *)
 | assertEq (l r t : term) (p : path) (* TODO attach type assertion? *)
 | Arg (l : term)
 | Bod (a :term) (l : term)
@@ -68,9 +67,11 @@ Inductive has_enpoint : list term -> term -> term -> term -> Prop :=
 
 | ty_cast ctx A' L B' a a' :
   has_enpoint ctx a a' A' ->
-  LumpOk ctx L ->
+
   has_enpoint ctx L A' TT ->
   has_enpoint ctx L B' TT ->
+  LumpOk ctx L ->
+
   has_enpoint ctx (Cast a L) (Cast a' L) B'
 
 | ty_lump ctx l L A' B' a a' :
@@ -82,23 +83,28 @@ Inductive has_enpoint : list term -> term -> term -> term -> Prop :=
   has_enpoint ctx L B' TT ->
   has_enpoint ctx (Lump l L) (Cast a' L) B'
 
-| ty_assertEqL ctx a a' A' b b' B' t p :
+| ty_assertEqL ctx a a' A' b b' B' C t p L :
   has_enpoint ctx a a' A' ->
   has_enpoint ctx b b' B' ->
 
   has_enpoint ctx t A' TT ->
   has_enpoint ctx t B' TT ->
+  has_enpoint ctx t C TT ->
+  LumpOk ctx t ->
 
-  has_enpoint ctx (assertEq a b t p) a' A' 
+  has_enpoint ctx (assertEq a b t p) (Cast a' L) C 
+  (* needs cast to allow local reduction behavior *)
   
-| ty_assertEqR ctx a a' A' b b' B' t p :
+| ty_assertEqR ctx a a' A' b b' B' C t p L :
   has_enpoint ctx a a' A' ->
   has_enpoint ctx b b' B' ->
 
   has_enpoint ctx t A' TT ->
   has_enpoint ctx t B' TT ->
+  has_enpoint ctx t C TT ->
+  LumpOk ctx t ->
 
-  has_enpoint ctx (assertEq a b t p) b' B' 
+  has_enpoint ctx (assertEq a b t p) (Cast b' L) C 
 
 | ty_Arg ctx AB A' B' :
   has_enpoint ctx AB (Pi A' B') TT ->
@@ -170,16 +176,38 @@ Inductive step : term -> term -> Prop :=
     (assertEq (App b a) (App c a) (Bod a t) (AObs a p))
     (* other reductions *)
   | step_cast_collapse a l l' :
-    (* value a -> *)
+    (* value ... -> *)
     step
       (Cast (Cast a l) l')
       (Cast a (Union l l'))
-
+(* lump *)
   | step_Lump l l' L L' :
-  (* value a L -> *)
+  (* value... -> *)
+  (* TODO this does not only need to happen to the first element *)
   step
     (Lump (cons (Lump l L) l') L')
     (Lump (l ++ l') (Union L L' ))
+
+  | step_Lump_cast a l' L L' :
+    (* value ... -> *)
+    (* TODO this does not only need to happen to the first element *)
+    step
+      (Lump (cons (Cast a L) l') L')
+      (Lump (cons a l') (Union L L' ))
+(* assert *)
+
+| step_Assert_castL a b L L' o :
+  step
+  (assertEq (Cast a L) b L' o)
+  (assertEq a b (Union L L') o)
+  
+
+  | step_Assert_castR a b L L' o :
+  step
+  (assertEq a (Cast b L) L' o)
+  (assertEq a b (Union L L') o)
+
+(* other reductions *)
 
 (* Arg *)
   | step_Arg A B :
