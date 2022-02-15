@@ -12,7 +12,8 @@ Inductive path : Type  := (* mutually inductive? *)
 | Here
 | AObs : term -> path -> path
 | BodTyObs : term -> path -> path
-| ArgObs : term -> path -> path
+| ArgObs : path -> path
+(* I would be happy to remove paths *)
 
 (* consider merging lump into term *)
 with term : Type :=
@@ -25,11 +26,12 @@ with term : Type :=
 
 | Lump (terms : list term) (t : term)
 (* TODO: cast just a singleton lump? *)
-| assertEq (l r : term) (p : path) (* TODO attach type assertion? *)
+| assertEq (l r t : term) (p : path) (* TODO attach type assertion? *)
 | Arg (l : term)
 | Bod (a :term) (l : term)
-| Ap (a :term) (l : term).
+(* | Ap (a :term) (l : term) *)
 (* TODO: app can just overload with ap *)
+.
 
 (* ... *)
 
@@ -80,15 +82,23 @@ Inductive has_enpoint : list term -> term -> term -> term -> Prop :=
   has_enpoint ctx L B' TT ->
   has_enpoint ctx (Lump l L) (Cast a' L) B'
 
-| ty_assertEqL ctx a a' A' b b' B' p :
+| ty_assertEqL ctx a a' A' b b' B' t p :
   has_enpoint ctx a a' A' ->
   has_enpoint ctx b b' B' ->
-  has_enpoint ctx (assertEq a b p) a' A' 
+
+  has_enpoint ctx t A' TT ->
+  has_enpoint ctx t B' TT ->
+
+  has_enpoint ctx (assertEq a b t p) a' A' 
   
-| ty_assertEqR ctx a a' A' b b' B' p :
+| ty_assertEqR ctx a a' A' b b' B' t p :
   has_enpoint ctx a a' A' ->
   has_enpoint ctx b b' B' ->
-  has_enpoint ctx (assertEq a b p) b' B' 
+
+  has_enpoint ctx t A' TT ->
+  has_enpoint ctx t B' TT ->
+
+  has_enpoint ctx (assertEq a b t p) b' B' 
 
 | ty_Arg ctx AB A' B' :
   has_enpoint ctx AB (Pi A' B') TT ->
@@ -136,7 +146,7 @@ Axiom extract_ty : term -> term.
 Axiom Union : term -> term ->  term.
 
 Inductive step : term -> term -> Prop :=
-  (* beta reductions *)
+  (* beta reductions - app *)
   (* | step_beta b a :
       value a ->
       step (App (Fun b) a) (b.[Fun b,  a /]) *)
@@ -153,12 +163,12 @@ Inductive step : term -> term -> Prop :=
     (App (Lump ls L) a)
     (Lump (map (fun x => App x a) ls) (Bod a L))
 
-  | step_assert_beta b c p a :
+  | step_assert_beta b c t p a :
   (* value a -> *)
   step
-    (App (assertEq b c p) a)
-    (assertEq (App b a) (App c a) (AObs a p)) 
-(* 
+    (App (assertEq b c t p) a)
+    (assertEq (App b a) (App c a) (Bod a t) (AObs a p))
+    (* other reductions *)
   | step_cast_collapse a l l' :
     (* value a -> *)
     step
@@ -171,14 +181,65 @@ Inductive step : term -> term -> Prop :=
     (Lump (cons (Lump l L) l') L')
     (Lump (l ++ l') (Union L L' ))
 
-  | step_Lump l l' L L' :
-  (* value a L -> *)
+(* Arg *)
+  | step_Arg A B :
   step
-    (Lump (cons (Lump l L) l') L')
-    (Lump (l ++ l') (Union L L' )) *)
+    (Arg (Pi A B))
+    A
 
+  | step_Arg_Assert A B A' B' p:
+  step
+    (Arg (assertEq (Pi A B) (Pi A' B') TT p))
+    (assertEq A A' TT (ArgObs p))
+
+  | step_Arg_Lump ls:
+  step
+    (Arg (Lump ls TT))
+    (Lump (map (Arg) ls) TT)
+
+    (* Bod *)
+  (* | step_Bod a A B :
+  step
+    (Bod a (Pi A B))
+    (B.[a/]) *)
+
+  (* | step_Bod_Assert a A B A' B' p:
+  step
+    (Bod a (assertEq (Pi A B) (Pi A' B') TT p))
+    (assertEq (B.[a/]) (B'.[a/]) TT (BodTyObs a p)) *)
+
+  | step_Bod_Lump a ls:
+  step
+    (Bod a (Lump ls TT))
+    (Lump (map (Bod a) ls) TT)
+
+  (* structrural rules *)
+  (* ,,, *)
 .
 
-Axiom Eq : (list term) -> term -> term -> term -> Prop.
+
+(* Assume Eq is a congruent equivelence that respects step.  And... *)
+(* Axiom Casts_dont_matter ctx a a' L L' A' B : 
+  has_enpoint ctx a a' A ->
+  has_enpoint ctx L A' TT ->
+  has_enpoint ctx L B TT ->
+  LumpOk ctx L ->
+
+  has_enpoint ctx L' A' TT ->
+  has_enpoint ctx L' B TT ->
+  LumpOk ctx L' ->
+
+  Eq ctx (Cast a L) (Cast a L') B. *)
+
+(* Axiom vacCast ctx a a' L L' A' B : 
+  ty ctx a A 
+  Eq ctx a (Cast a (cons A Nil)) A. *)
+
+
+Lemma preservation ctx a a' A a2 : 
+  has_enpoint ctx a a' A -> 
+  step a a2 ->
+  has_enpoint ctx a2 a' A.
+Admitted.
 
 
