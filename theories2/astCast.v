@@ -8,19 +8,12 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Inductive path : Type  := (* mutually inductive? *)
-| Here
-| AObs : term -> path -> path
-| BodTyObs : term -> path -> path
-| ArgObs : path -> path
-(* I would be happy to remove paths *)
-
 (* consider merging lump into term *)
-with term : Type :=
+Inductive term : Type :=
 | Var (x : var)
 | TT
 | App (s t : term)
-| Fun (s : {bind 2 of term})
+| Lamb (s : {bind term})
 | Pi (s : term) (t : {bind term})
 | Cast (s : term) (l : term)
 
@@ -28,6 +21,8 @@ with term : Type :=
 | assertEq (l r t : term) (p : path) (* TODO attach or remove type assertion? *)
 | Arg (l : term)
 | Bod (a :term) (l : term)
+
+
 (* | Ap (a :term) (l : term) *)
 (* TODO: app can just overload with ap *)
 .
