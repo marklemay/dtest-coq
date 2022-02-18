@@ -94,7 +94,7 @@ psteps b b'
    -> pstep d d'
    -> pstep
     (assertEq (Pi a b) (Pi c d))
-    (Pi (assertEq a' b') (assertEq c' d'))
+    (Pi (assertEq a' c') (assertEq b' d'))
 
 | psArgPi x x' y :
   pstep x x'
